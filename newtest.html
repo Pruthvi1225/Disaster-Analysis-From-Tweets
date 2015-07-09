@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Tweets Analysis</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <style>
+
+      #bar_chart{
+        width: 100%;
+        height:20%;
+        margin-left:auto; margin-right:auto; 
+      }
+      html,body,#map-canvas {
+        height: 100%;
+        margin: 0px;
+        padding: 0px;
+        background-color: #F5FFFA
+      }
+      #panel {
+        position: absolute;
+        top: 95%;
+        left: 50%;
+        margin-left: -180px;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+      }
+      .axis path,
+      .axis line {
+          fill: none;
+          stroke: black;
+          shape-rendering: crispEdges;
+        }
+        
+      .axis text {
+          font-size: 10px;
+        }
+      .d3-tip {
+          line-height: 1;
+          font-weight: bold;
+          padding: 12px;
+          background: rgba(0, 0, 0, 0.8);
+          color: #fff;
+          border-radius: 2px;
+        }
+        /* Creates a small triangle extender for the tooltip */
+      .d3-tip:after {
+        box-sizing: border-box;
+        display: inline;
+        font-size: 10px;
+        width: 100%;
+        line-height: 1;
+        color: rgba(0, 0, 0, 0.8);
+        content: "\25BC";
+        position: absolute;
+        text-align: center;
+      }
+
+      /* Style northward tooltips differently */
+      .d3-tip.n:after {
+        margin: -1px 0 0 0;
+        top: 100%;
+        left: 0;
+      }
+
+
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true&libraries=visualization"></script>
+    <script src="d3/d3.v3.js"></script>
+    <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+    <script src="js/jquery.js"></script>
+    <script type="text/javascript">
+      
+
+
+
+      // Adding 500 Data Points
+      var map, heatmap = [], earthquake = [], allearthmap, allfloodmap;
+      var heatmap2=[], flood = [];
+      var curLong, curLat, coord, temp = [];
+     for (var i = 1; i <= 3; i++){
+        var temp = readFile("data/earthquake/"+i+".csv");
+           earthquake.push(temp);  
+      }
+      for (var i = 1; i <= 3; i++){
+
+        var temp = readFile("data/flood/"+i+".csv");
+        flood.push(temp);
+      }
+      var allearth = readFile("time/wholedata/earthquake_new.csv");
+      var allflood = readFile("time/wholedata/flood_new.csv");
+
+     
+     function initialize() {
+      var mapOptions = {
+        zoom: 3,
+        center: new google.maps.LatLng(0, 0),
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+      };
+
+        map = new google.maps.Map(document.getElementById('map-canvas'),
+            mapOptions);
+
+
+        map.set('styles', [
+          {
+            featureType: 'landscape',
+            elementType: 'geometry',
+            stylers: [
+              { color: "#F5FFFA" }
+            ]
+          }]);
+
+
+
+
+
+        layer = new google.maps.FusionTablesLayer({
+          query: {
+            select: 'geometry',
+            from: '1kypXi-h8KhbYMHRnOdAy1GM-_0RW9OrA-z9EfMPg'
+          },
+          styles: [
+            {
+              where:'count > 100',
+              polygonOptions:{
+                fillColor: '#00bb00',
+                fillOpacity:0.3
+              }},
+            {
+            where: 'count > 20 and count < 99',
+            polygonOptions: {
+              fillColor: '#238b45',
+              fillOpacity: 0.3
+            }},
+            {
+              where: 'count > 14 and count < 21',
+              polygonOptions:{
+                fillColor: '#74c476',
+              fillOpacity: 0.3
+              }
+            },
+            {
+              where: 'count > 7 and count < 15',
+              polygonOptions:{
+                fillColor: '#bae4b3',
+              fillOpacity: 0.3
+              }
+            },
+            {
+              where : 'count > 0 and count< 8',
+              polygonOptions:{
+                fillColor:'#edf8e9',
+              fillOpacity: 0.3
+              }
+            }
+      ]});
+  layer.setMap(map);
+
+        for(var i = 0; i < earthquake.length; i++)
+        {
+          temp = createMap(earthquake[i],0);
+          heatmap.push(temp);
+        }
+          
+        for(var i = 0; i < flood.length; i++)
+        {
+          temp = createMap(flood[i],1);
+          heatmap2.push(temp);
+        }
+        closeAllMap();
+        allearthmap = createMap(allearth,0);
+        allfloodmap = createMap(allflood,1);
+    
+    
+    }
+  function ShowEarthquakemap(time) {
+      if (time == -1){
+        closeAllMap()
+        allearthmap.setMap(allearthmap.getMap() ? null : map);        
+      }
+      else{
+        for (var i = 0; i < heatmap.length; i++)
+          heatmap[i].setMap(null);
+        allearthmap.setMap(null);
+        heatmap[time].setMap(map);
+      }
+    }
+  function ShowFloodmap(time) {
+    if (time == -1){
+      closeAllMap()
+      allfloodmap.setMap(allfloodmap.getMap() ? null : map);
+    }
+    else{
+        for (var i = 0; i < heatmap2.length; i++)
+          heatmap2[i].setMap(null);
+        allfloodmap.setMap(null);
+        heatmap2[time].setMap(map);
+    }
+
+  }
+  function closeAllMap(){
+    for (var i = 0; i < heatmap2.length; i++)
+          heatmap2[i].setMap(null);
+     for (var i = 0; i < heatmap.length; i++)
+          heatmap[i].setMap(null);
+  }
+
+  google.maps.event.addDomListener(window, 'load', initialize);
+
+  function readFile(filename){
+    var coord, temp, curLong, curLat, result = [];
+
+    d3.csv(filename, function(dataset){
+          for (var i = 0; i < dataset.length; i++)
+          { 
+            coord = dataset[i].COORD;
+            coord = coord.replace(/[\[\]']+/g,'');
+            temp = coord.split(",");
+            curLong = temp[1];
+            curLat = temp[0];
+            result.push(new google.maps.LatLng(parseFloat(curLat), parseFloat(curLong)));
+          }
+     }); 
+    return result;
+  }
+
+
+  function createMap(arrays, values){
+     var gradient = [
+          'rgba(0,220,229,0)',
+          'rgba(0,175,225,1)',
+          'rgba(0,132,221,1)',
+          'rgba(0,90,217,1)',
+          'rgba(0,50,213,1)',
+          'rgba(0,11,210, 1)',
+          'rgba(26,0,206, 1)',
+          'rgba(62,0,202, 1)',
+          'rgba(97,0,198, 1)',
+          'rgba(130,0,194, 1)',
+          'rgba(162,0,191, 1)'
+        ]
+      var pointArray = new google.maps.MVCArray(arrays);
+      var heatmap = new google.maps.visualization.HeatmapLayer({
+          data: pointArray,
+          map : map,
+          opacity: 1
+      });
+      if (values == 0)
+        heatmap.set('gradient', null);
+      else
+        heatmap.set('gradient', gradient);
+      return heatmap;
+  }
+
+    </script>
+  </head>
+
+  <body>   
+    
+    <div id="bar_chart" class="col-lg-12"> </div>
+    <div id="map-canvas"  class="col-md-12"></div>
+    <div id="panel">
+      <button onclick="ShowEarthquakemap(-1)">Show Earthquakemap</button>
+      <button onclick="ShowFloodmap(-1)">Show Floodmap</button>
+    </div>
+    <script type="text/javascript">
+     var current = 0;
+     var margin = {top: 0, right: 100, bottom: 30, left: 30};
+     var w =document.getElementById("bar_chart").offsetWidth- margin.left - margin.right;
+     var h = document.getElementById("bar_chart").offsetHeight- margin.top - margin.bottom;
+     var svg = d3.select(bar_chart)
+                  .append("svg")
+                  .attr("width", w)
+                  .attr("height", h + 30)
+                  .append("g")
+                  .attr("transform", "translate(" + 350 + "," + 5 + ")")
+      
+      d3.csv("time/tweetscount.csv", function(datas){
+      var barPadding = 1;
+
+      var wx = datas.length * 25 * 2;
+      
+       var x = d3.scale.ordinal()
+               .rangeRoundBands([0, wx], .1);
+
+      var xAxis = d3.svg.axis()
+                  .scale(x)
+                  .tickSize(-5)
+                  .tickSubdivide(true)
+                  .orient("bottom");
+
+      var yflood = d3.scale.linear()
+        .range([h, 0]);
+      var yearth = d3.scale.linear()
+        .range([h, 0]);
+
+
+    
+      var sumflood = d3.max(datas, function(d) { return parseInt(d.Flood); });
+       var minflood = d3.min(datas, function(d) { return parseInt(d.Flood); });
+      yflood.domain([1500, sumflood]);
+
+      var sumearth = d3.max(datas, function(d){return parseInt(d.Earthquake);});
+      var minearth = d3.min(datas, function(d) { return parseInt(d.Earthquake); });
+      yearth.domain([0,sumearth]);
+      
+
+      x.domain(datas.map(function(d) {return formatDate(d.Time); }));
+
+      svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + h + ")")
+        .call(xAxis)
+        .selectAll("text");
+
+
+        var tip = d3.tip()
+          .attr('class', 'd3-tip')
+          .offset(function() {
+            return [this.getBBox().height /3.5, 0]
+          })
+          .html(function(d) {
+            return "<strong>Earthquake: </strong>" + d.Earthquake + "</span></br><strong>Flood: </strong>"+d.Flood;
+          })
+      tip.direction('n');
+      svg.call(tip);
+
+      svg.selectAll("floodbar")
+        .data(datas)
+        .enter()
+        .append("rect")
+        .attr("class", "floodbar")
+        .attr("x", function(d){ return x(formatDate(d.Time)) ;})
+        .attr("width", x.rangeBand()/2)
+        .attr("y", function(d) { return yflood(parseInt(d.Flood)); })
+        .attr("height", function(d) {
+           return h - yflood(parseInt(d.Flood));})
+        .attr("fill", "rgb(162,0,191)");
+
+
+    svg.selectAll("earthbar")
+        .data(datas)
+        .enter().append("rect")
+        .attr("class", "earthbar")
+        .attr("x", function(d) { return x(formatDate(d.Time))+x.rangeBand()/2 ; })
+        .attr("width", x.rangeBand()/2)
+        .attr("y", function(d) { return yearth(d.Earthquake); })
+        .attr("height", function(d) {
+            return h  - yearth(parseInt(d.Earthquake));})
+        .attr("fill","rgb(255,10,10)");
+
+      svg.selectAll(".current")
+        .data(datas)
+        .enter().append("rect")
+        .attr("class", "current")
+        .attr("x", function(d) { return x(formatDate(d.Time)); })
+        .attr("width", x.rangeBand())
+        .attr("y", function(d) { return yflood(sumflood); })
+        .attr("height", function(d) {
+           return h - yflood(sumflood);})
+        .attr("opacity",0)
+        .attr("id",function(d,i){return "barSelect"+i;})
+        .on("click",function(d,i){
+            d3.select("#barSelect"+current).attr("opacity",0);
+            current=i;
+            d3.select("#barSelect"+current).attr("opacity",0.1);
+            showData(i);
+        })
+        .on('mouseover', tip.show)
+        .on('mouseout', tip.hide);
+
+      });
+
+   
+  
+    function formatDate(date){
+    return date;
+    }
+
+    function showData(i){
+          ShowEarthquakemap(i);
+          ShowFloodmap(i);
+      }
+
+    
+    </script>
+  </body>
+</html>

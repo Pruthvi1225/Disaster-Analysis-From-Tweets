@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Region Map</title>
+    <style>
+      html, body, #map-canvas {
+        height: 100%;
+        margin: 0px;
+        padding: 0px
+      }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true"></script>
+    <script>
+var map, layer;
+
+function initialize() {
+
+  var australia = new google.maps.LatLng(-25, 133);
+
+  map = new google.maps.Map(document.getElementById('map-canvas'), {
+     zoom: 3,
+        center: new google.maps.LatLng(20, 0),
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+  });
+
+  layer = new google.maps.FusionTablesLayer({
+    query: {
+      select: 'geometry',
+      from: '17cENb7ZIY0ZwYTik_TRJD0ABR6a-WdMSm8EwHKDL'
+    },
+    styles: [{
+      polygonOptions: {
+        fillColor: '#00FF00',
+        fillOpacity: 1.0
+      }}, {
+      where: 'count > 80',
+      polygonOptions: {
+        fillColor: '#238b45',
+        fillOpacity: 0.5
+      }},
+      {
+        where: 'count > 9 and count < 80',
+        polygonOptions:{
+          fillColor: '#74c476',
+        fillOpacity: 0.5
+        }
+      },
+      {
+        where: 'count > 4 and count < 10',
+        polygonOptions:{
+          fillColor: '#bae4b3',
+        fillOpacity: 0.5
+        }
+      },
+      {
+        where : 'count>0 and count<5',
+        polygonOptions:{
+          fillColor:'#edf8e9',
+        fillOpacity: 0.5
+        }
+      }
+      ]});
+  layer.setMap(map);
+}
+
+google.maps.event.addDomListener(window, 'load', initialize);
+
+    </script>
+  </head>
+  <body>
+    <div id="map-canvas"></div>
+  </body>
+</html>

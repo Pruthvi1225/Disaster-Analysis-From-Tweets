@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Heatmaps</title>
+    <style>
+      html, body, #map-canvas {
+        height: 100%;
+        margin: 0px;
+        padding: 0px
+      }
+      #panel {
+        position: absolute;
+        top: 95%;
+        left: 50%;
+        margin-left: -180px;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+      }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true&libraries=visualization"></script>
+    <script src="d3/d3.v3.js"></script>
+    <script type="text/javascript">
+// Adding 500 Data Points
+var map, heatmap, earthquake = [];
+var heatmap2, flood = [];
+var curLong, curLat, coord, temp = [];
+ d3.csv("earthquake.csv", function(dataset){
+    for (var i = 0; i < dataset.length; i++)
+    { 
+      coord = dataset[i].COORD;
+      coord = coord.replace(/[\[\]']+/g,'');
+      temp = coord.split(",");
+      curLong = temp[1];
+      curLat = temp[0];
+      earthquake.push(new google.maps.LatLng(parseFloat(curLat), parseFloat(curLong)));
+    }
+  }); 
+  d3.csv("flood.csv", function(dataset){
+    for (var i = 0; i < dataset.length; i++)
+    { 
+      coord = dataset[i].COORD;
+      coord = coord.replace(/[\[\]']+/g,'');
+      temp = coord.split(",");
+      curLong = temp[1];
+      curLat = temp[0];
+      flood.push(new google.maps.LatLng(parseFloat(curLat), parseFloat(curLong)));
+    }
+  }); 
+
+var gradient = [
+    'rgba(0, 255, 255, 0)',
+    'rgba(0, 255, 255, 1)',
+    'rgba(0, 191, 255, 1)',
+    'rgba(0, 127, 255, 1)',
+    'rgba(0, 63, 255, 1)',
+    'rgba(0, 0, 255, 1)',
+    'rgba(0, 0, 223, 1)',
+    'rgba(0, 0, 191, 1)',
+    'rgba(0, 0, 159, 1)',
+    'rgba(0, 0, 127, 1)',
+    'rgba(63, 0, 91, 1)',
+    'rgba(127, 0, 63, 1)',
+    'rgba(191, 0, 31, 1)',
+    'rgba(255, 0, 0, 1)'
+  ]
+     function initialize() {
+      var mapOptions = {
+        zoom: 3,
+        center: new google.maps.LatLng(0, 0),
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+      };
+
+  map = new google.maps.Map(document.getElementById('map-canvas'),
+      mapOptions);
+
+  var pointArray = new google.maps.MVCArray(earthquake);
+  var pointArray2 = new google.maps.MVCArray(flood);
+  heatmap = new google.maps.visualization.HeatmapLayer({
+    data: pointArray,
+    //sSgradient: gradient,
+    //radius : 15,
+    map : map,
+    //maxIntensity: 5,
+    opacity: 0.7
+  });
+    heatmap2 = new google.maps.visualization.HeatmapLayer({
+      data : pointArray2,
+      gradient: gradient,
+      map : map,
+      opacity: 0.7
+    });
+    /*heatmap2.set('radius', heatmap.get(5))
+    heatmap2.set('opacity', heatmap.get(0.2))*/
+    }
+  function ShowEarthquakemap() {
+  heatmap.setMap(heatmap.getMap() ? null : map);
+  }
+  function ShowFloodmap() {
+  heatmap2.setMap(heatmap2.getMap() ? null : map);
+  }
+google.maps.event.addDomListener(window, 'load', initialize);
+
+    </script>
+  </head>
+
+  <body>
+    <div id="panel">
+      <button onclick="ShowEarthquakemap()">Show Earthquakemap</button>
+      <button onclick="ShowFloodmap()">Show Floodmap</button>
+    </div>
+    <div id="map-canvas"></div>
+  </body>
+</html>

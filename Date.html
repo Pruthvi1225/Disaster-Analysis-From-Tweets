@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Heatmaps</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <style>
+
+      #bar_chart{
+        width: 100%;
+        height:20%;
+        margin-left:auto; margin-right:auto; 
+      }
+      html,body,#map-canvas {
+        height: 100%;
+        margin: 0px;
+        padding: 0px
+      }
+      #panel {
+        position: absolute;
+        top: 95%;
+        left: 50%;
+        margin-left: -180px;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+      }
+      .axis path,
+      .axis line {
+          fill: none;
+          stroke: black;
+          shape-rendering: crispEdges;
+        }
+        
+      .axis text {
+          font-size: 10px;
+        }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true&libraries=visualization"></script>
+    <script src="d3/d3.v3.js"></script>
+    <script src="js/jquery.js"></script>
+    <script type="text/javascript">
+      
+
+
+
+      // Adding 500 Data Points
+      var map, heatmap = [], earthquake = [];
+      var heatmap2=[], flood = [];
+      var curLong, curLat, coord, temp = [];
+     for (var i = 1; i <= 3; i++){
+        var temp = readFile("data/earthquake/"+i+".csv");
+           earthquake.push(temp);  
+      }
+      for (var i = 1; i <= 3; i++){
+
+        var temp = readFile("data/flood/"+i+".csv");
+        flood.push(temp);
+      }
+        
+     
+     function initialize() {
+      var mapOptions = {
+        zoom: 3,
+        center: new google.maps.LatLng(0, 0),
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+      };
+
+        map = new google.maps.Map(document.getElementById('map-canvas'),
+            mapOptions);
+
+        for(var i = 0; i < earthquake.length; i++)
+        {
+          temp = createMap(earthquake[i],0);
+          heatmap.push(temp);
+        }
+          
+        for(var i = 0; i < flood.length; i++)
+        {
+          temp = createMap(flood[i],1);
+          heatmap2.push(temp);
+        }
+          
+  
+    }
+  function ShowEarthquakemap(time) {
+      if (time == 0)
+        for (var i = 0; i < heatmap.length; i++)
+          heatmap[i].setMap(map);
+      else{
+        for (var i = 0; i < heatmap.length; i++)
+          heatmap[i].setMap(null);
+        heatmap[time - 1].setMap(map);
+      }
+    }
+  function ShowFloodmap(time) {
+    if (time == 0)
+        for (var i = 0; i < heatmap2.length; i++)
+          heatmap2[i].setMap(map);
+      else{
+        for (var i = 0; i < heatmap2.length; i++)
+          heatmap2[i].setMap(null);
+        heatmap2[time - 1].setMap(map);
+      }
+
+  }
+  
+
+  google.maps.event.addDomListener(window, 'load', initialize);
+
+  function readFile(filename){
+    var coord, temp, curLong, curLat, result = [];
+
+    d3.csv(filename, function(dataset){
+          for (var i = 0; i < dataset.length; i++)
+          { 
+            coord = dataset[i].COORD;
+            coord = coord.replace(/[\[\]']+/g,'');
+            temp = coord.split(",");
+            curLong = temp[1];
+            curLat = temp[0];
+            result.push(new google.maps.LatLng(parseFloat(curLat), parseFloat(curLong)));
+          }
+     }); 
+    return result;
+  }
+
+  function createMap(arrays, values){
+     var gradient = [
+          'rgba(0, 255, 255, 0)',
+          'rgba(0, 255, 255, 1)',
+          'rgba(0, 191, 255, 1)',
+          'rgba(0, 127, 255, 1)',
+          'rgba(0, 63, 255, 1)',
+          'rgba(0, 0, 255, 1)',
+          'rgba(0, 0, 223, 1)',
+          'rgba(0, 0, 191, 1)',
+          'rgba(0, 0, 159, 1)',
+          'rgba(0, 0, 127, 1)',
+          'rgba(63, 0, 91, 1)',
+          'rgba(127, 0, 63, 1)',
+          'rgba(191, 0, 31, 1)',
+          'rgba(255, 0, 0, 1)'
+        ]
+      var pointArray = new google.maps.MVCArray(arrays);
+      var heatmap = new google.maps.visualization.HeatmapLayer({
+          data: pointArray,
+          map : map,
+          opacity: 0.7
+      });
+      if (values == 0)
+        heatmap.set('gradient', null);
+      else
+        heatmap.set('gradient', gradient);
+      return heatmap;
+  }
+
+    </script>
+  </head>
+
+  <body>   
+    
+    <div id="bar_chart" class="col-lg-12"> </div>
+    <div id="map-canvas"  class="col-md-12"></div>
+    <div id="panel">
+      <button onclick="ShowEarthquakemap(0)">Show Earthquakemap</button>
+      <button onclick="ShowFloodmap(0)">Show Floodmap</button>
+    </div>
+    <script type="text/javascript">
+     var current = 0;
+     var margin = {top: 0, right: 100, bottom: 30, left: 30};
+     var w =document.getElementById("bar_chart").offsetWidth- margin.left - margin.right;
+     var h = document.getElementById("bar_chart").offsetHeight- margin.top - margin.bottom;
+     var svg = d3.select(bar_chart)
+                  .append("svg")
+                  .attr("width", w)
+                  .attr("height", h)
+                  .append("g")
+                  .attr("transform", "translate(" + 700 + "," + 5 + ")")
+      
+      d3.csv("data/count.csv", function(datas){
+      var barPadding = 1;
+
+      var wx = datas.length * 30 * 2;
+      
+       var x = d3.scale.ordinal()
+               .rangeRoundBands([0, wx], .1);
+
+      var xAxis = d3.svg.axis()
+                  .scale(x)
+                  .tickSize(-5)
+                  .tickSubdivide(true)
+                  .orient("bottom");
+
+      var yflood = d3.scale.linear()
+        .range([h, 0]);
+      var yearth = d3.scale.linear()
+        .range([h, 0]);
+
+/*      var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .ticks(5);
+
+      var yGrid = d3.svg.axis()
+          .scale(y)
+          .orient("left")
+          .tickSize(-w, 0, 0)
+          .tickFormat("")
+          .ticks(5);*/
+
+
+    
+      var sumflood = d3.sum(datas, function(d) { return d.Flood; });
+      yflood.domain([0, sumflood]);
+      var sumearth = d3.sum(datas, function(d){return d.Earthquake;});
+      yearth.domain([0,sumearth]);
+      
+
+      x.domain(datas.map(function(d) {return formatDate(d.Date); }));
+
+      svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + (h - 15) + ")")
+        .call(xAxis)
+        .selectAll("text");
+
+      /*svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis);
+       
+      svg.append("g")
+        .attr("class", "grid")
+        .call(yGrid); */
+
+      svg.selectAll("floodbar")
+        .data(datas)
+        .enter()
+        .append("rect")
+        .attr("class", "floodbar")
+        .attr("x", function(d){ return x(formatDate(d.Date)) ;})
+        .attr("width", x.rangeBand()/2)
+        .attr("y", function(d) { return yflood(d.Flood); })
+        .attr("height", function(d) {
+           return h - 15 - yflood(d.Flood);})
+        .attr("fill", "darkblue");
+    svg.selectAll("earthbar")
+        .data(datas)
+        .enter().append("rect")
+        .attr("class", "earthbar")
+        .attr("x", function(d) { return x(formatDate(d.Date))+x.rangeBand()/2 ; })
+        .attr("width", x.rangeBand()/2)
+        .attr("y", function(d) { return yearth(d.Earthquake); })
+        .attr("height", function(d) {
+           return h- 15 - yearth(d.Earthquake);})
+        .attr("fill","#228b22");
+
+      svg.selectAll(".current")
+        .data(datas)
+        .enter().append("rect")
+        .attr("class", "current")
+        .attr("x", function(d) { return x(formatDate(d.Date)); })
+        .attr("width", x.rangeBand())
+        .attr("y", function(d) { return yearth(sumearth); })
+        .attr("height", function(d) {
+           return h-15 - yearth(sumearth);})
+        .attr("opacity",0)
+        .attr("id",function(d,i){return "barSelect"+i;})
+        .on("click",function(d,i){
+            d3.select("#barSelect"+current).attr("opacity",0);
+            current=i;
+            d3.select("#barSelect"+current).attr("opacity",0.15);
+            showData(i);
+        });
+
+      });
+
+   
+  
+    function formatDate(date){
+    var month=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return date.substring(0,2) + " " + month[parseInt((date.substring(3,5))-1)];
+    }
+
+    function showData(i){
+          ShowEarthquakemap(i + 1);
+          ShowFloodmap(i + 1);
+      }
+
+    
+    </script>
+  </body>
+</html>
