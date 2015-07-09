@@ -10,4 +10,4 @@ D3.js version 3.5.5 and Goole Map API for visualize the data with bar charts and
 We found that people tweeted more about the disaster. For example, people in Houston and Texas area tweeted more flood.
 
 #ScreenShot
-![Alt text](https://github.com/TCTseng/Disaster-Analysis-From-Tweets/raw/master/pics/pic1.PNG "Heat Map")	
+![Alt text](https://github.com/TCTseng/Disaster-Analysis-From-Tweets/raw/master/pics/pic1.png "Heat Map")	
